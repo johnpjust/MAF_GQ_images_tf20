@@ -114,7 +114,7 @@ class parser_:
     pass
 
 args = parser_()
-args.early_stopping = 10
+args.early_stopping = 30
 args.batch_dim = 500
 args.check_every = 5
 args.show_log = True
