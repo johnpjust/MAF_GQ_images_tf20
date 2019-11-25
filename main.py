@@ -29,7 +29,7 @@ def img_heatmap(model, imgcre, args):
                     for j in range(np.int(cols/args.spacing)*args.spacing):
                         if not j%args.spacing:
                             im_breakup_array[np.int(j/args.spacing),:] = tf.reshape(tf.image.crop_to_bounding_box(imgcre, i, j, args.rand_box_size, args.rand_box_size)/128 - 1, [-1]).numpy()
-                    heatmap[np.int(i/args.spacing), :] = model.eval(x_mb=im_breakup_array).numpy()
+                    heatmap[np.int(i/args.spacing), :] = tf.squeeze(model.eval(im_breakup_array)).numpy()
         else:
             for i in range(np.int(rows/args.spacing)*args.spacing):
                 im_breakup_array = np.zeros((np.int(cols / args.spacing), args.vh.shape[1]), dtype=np.float32)
@@ -37,7 +37,7 @@ def img_heatmap(model, imgcre, args):
                     for j in range(np.int(cols/args.spacing)*args.spacing):
                         if not j%args.spacing:
                             im_breakup_array[np.int(j/args.spacing),:] = tf.squeeze(tf.matmul(tf.reshape(tf.image.crop_to_bounding_box(imgcre, i, j, args.rand_box_size, args.rand_box_size)/128 - 1, [1, -1]), args.vh)).numpy()
-                    heatmap[np.int(i/args.spacing), :] = model.eval(x_mb=im_breakup_array).numpy()
+                    heatmap[np.int(i/args.spacing), :] = tf.squeeze(model.eval(im_breakup_array)).numpy()
     return heatmap
 
 def img_preprocessing(imgcre, args):
@@ -114,7 +114,7 @@ class parser_:
     pass
 
 args = parser_()
-args.early_stopping = 30
+args.early_stopping = 100
 args.batch_dim = 500
 args.check_every = 5
 args.show_log = True
@@ -123,10 +123,10 @@ args.max_iterations = 20000
 args.num_layers = 5
 args.num_hidden = [100]
 args.act = tf.nn.relu
-args.vh = 0 #0 =no, 1=yes
+args.vh = 1 #0 =no, 1=yes
 args.prefetch_size = 1  # data pipeline prefetch buffer size
 args.parallel = 16  # data pipeline parallel processes
-args.img_size = 0.25;  ## resize img between 0 and 1
+args.img_size = 1.0;  ## resize img between 0 and 1
 args.preserve_aspect_ratio = True;  ##when resizing
 args.rand_box_init = 0.1  ##relative size of random box from image
 args.manualSeed = None
@@ -158,19 +158,8 @@ t = train.Trainer(model, args) ## only pass model but don't re-initialize for SC
 t.train(data_loader_train, data_loader_valid, data_loader_cont, early_stopping=args.early_stopping, check_every_N=args.check_every, show_log=args.show_log, max_iterations=args.max_iterations, saver_name='temp/tmp_model')
 # t.train(sess, data.astype(np.float32), val_data=val.astype(np.float32), early_stopping=100, check_every_N=5, show_log=True, batch_size=100, max_iterations=20000, saver_name='temp/tmp_model')
 
-# # import matplotlib.pyplot as plt
-# # import scipy.stats
-# s = model.gen(sess, 5000)
-# # out = model.eval(train_data, sess)
-# out2 = model.eval(sess.run(val), sess)
-# out3 = model.eval(sess.run(cont_data), sess)
-# sout_ = model.eval(s,sess)
-# # dist = scipy.stats.johnsonsu.fit(out)
-# # out = (np.arcsinh((out - dist[-2]) / dist[-1]) * dist[1] + dist[0])
-# # out2 = (np.arcsinh((out2 - dist[-2]) / dist[-1]) * dist[1] + dist[0])
-# # out3 = (np.arcsinh((out3 - dist[-2]) / dist[-1]) * dist[1] + dist[0])
-# # sout = (np.arcsinh((sout_ - dist[-2]) / dist[-1]) * dist[1] + dist[0])
 
+###################### inference ######################
 args.spacing = 8
 
 args.path = os.path.join(r'D:\pycharm_projects\GQC_images_tensorboard', 'MAF_layers{}_h{}_vh{}_resize{}_boxsize{}_{}'.format(
