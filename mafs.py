@@ -142,7 +142,7 @@ class MaskedAutoregressiveFlow:
             for made in self.mades:
                 made.set_input(self.u)
                 self.u = made.u()
-                self.logdet_dudx += 0.5 * tf.reduce_sum(made.logp, axis=1, keepdims=True)
+                self.logdet_dudx += 0.5 * tf.reduce_sum(made.logp(), axis=1, keepdims=True)
 
     def L(self):
         self.forward()

@@ -150,7 +150,7 @@ if gpus:
 data_loader_train, data_loader_valid, data_loader_test, data_loader_cont = load_dataset(args)
 
 ## build model
-model = mafs.MaskedAutoregressiveFlow(args.n_dims, args.num_hidden, args.act, args.num_layers, batch_norm=True, args=args)
+model = mafs.MaskedAutoregressiveFlow(args.n_dims, args.num_hidden, args.act, args.num_layers, batch_norm=False, args=args)
 
 t = train.Trainer(model, args) ## only pass model but don't re-initialize for SCE
 
