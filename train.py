@@ -106,7 +106,7 @@ class Trainer:
             m.assign(n)
 
         if self.has_batch_norm:
-            self.model.training = False
+            # self.model.training = False
             train_data = np.concatenate([x for x in train_data_in])
             self.model.update_batch_norm(train_data)
         

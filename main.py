@@ -16,7 +16,7 @@ import json
 
 tf.random.set_seed(None)
 
-def img_heatmap(compute_img_log_p_x, imgcre, args):
+def img_heatmap(model, imgcre, args):
     # rand_box = np.append(tf.cast(tf.multiply(tf.cast(imgcre.shape[:2], tf.float32),tf.constant(0.1)), tf.int32).numpy(), [3])
     rows = imgcre.shape[0]-args.rand_box[0]
     cols = imgcre.shape[1] - args.rand_box[1]
@@ -29,7 +29,7 @@ def img_heatmap(compute_img_log_p_x, imgcre, args):
                     for j in range(np.int(cols/args.spacing)*args.spacing):
                         if not j%args.spacing:
                             im_breakup_array[np.int(j/args.spacing),:] = tf.reshape(tf.image.crop_to_bounding_box(imgcre, i, j, args.rand_box_size, args.rand_box_size)/128 - 1, [-1]).numpy()
-                    heatmap[np.int(i/args.spacing), :] = compute_img_log_p_x(x_mb=im_breakup_array).numpy()
+                    heatmap[np.int(i/args.spacing), :] = model.eval(x_mb=im_breakup_array).numpy()
         else:
             for i in range(np.int(rows/args.spacing)*args.spacing):
                 im_breakup_array = np.zeros((np.int(cols / args.spacing), args.vh.shape[1]), dtype=np.float32)
@@ -37,7 +37,7 @@ def img_heatmap(compute_img_log_p_x, imgcre, args):
                     for j in range(np.int(cols/args.spacing)*args.spacing):
                         if not j%args.spacing:
                             im_breakup_array[np.int(j/args.spacing),:] = tf.squeeze(tf.matmul(tf.reshape(tf.image.crop_to_bounding_box(imgcre, i, j, args.rand_box_size, args.rand_box_size)/128 - 1, [1, -1]), args.vh)).numpy()
-                    heatmap[np.int(i/args.spacing), :] = compute_img_log_p_x(x_mb=im_breakup_array).numpy()
+                    heatmap[np.int(i/args.spacing), :] = model.eval(x_mb=im_breakup_array).numpy()
     return heatmap
 
 def img_preprocessing(imgcre, args):
@@ -150,7 +150,7 @@ if gpus:
 data_loader_train, data_loader_valid, data_loader_test, data_loader_cont = load_dataset(args)
 
 ## build model
-model = mafs.MaskedAutoregressiveFlow(args.n_dims, args.num_hidden, args.act, args.num_layers, batch_norm=False, args=args)
+model = mafs.MaskedAutoregressiveFlow(args.n_dims, args.num_hidden, args.act, args.num_layers, batch_norm=True, args=args)
 
 t = train.Trainer(model, args) ## only pass model but don't re-initialize for SCE
 
@@ -218,11 +218,11 @@ np.save(args.path + '/totals_t' + '_' + str(args.spacing) + '_' + str(heatmap_t.
 np.save(args.path + '/totals_c' + '_' + str(args.spacing) + '_' + str(heatmap_c.reshape((heatmap_c.shape[0], -1)).shape[1]) + '.npy', heatmap_c)
 
 
-# ############# debug
-ins = [x for x in data_loader_train]
-model.input = ins[0]
-with tf.GradientTape() as tape:
-    loss = model.trn_loss()
-grads = tape.gradient(loss, model.parms)
-grads = [None if grad is None else tf.clip_by_norm(grad, clip_norm=args.clip_norm) for grad in grads]
-t.optimizer.apply_gradients(zip(grads, model.parms))
+# # ############# debug
+# ins = [x for x in data_loader_train]
+# model.input = ins[0]
+# with tf.GradientTape() as tape:
+#     loss = model.trn_loss()
+# grads = tape.gradient(loss, model.parms)
+# grads = [None if grad is None else tf.clip_by_norm(grad, clip_norm=args.clip_norm) for grad in grads]
+# t.optimizer.apply_gradients(zip(grads, model.parms))
